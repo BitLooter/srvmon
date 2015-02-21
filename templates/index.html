@@ -8,7 +8,23 @@
 
 <body>
     <h1>Server status</h1>
-    <p>No status yet</p>
+    <h2>Free disk space</h2>
+    {% for item in render_items %}
+        {% if item.free_space > 1024**3 %}
+            {% set size_divisor = 1024**3 %}
+            {% set size_symbol = 'GB' %}
+        {% elif item.free_space > 1024**2 %}
+            {% set size_divisor = 1024**2 %}
+            {% set size_symbol = 'MB' %}
+        {% elif item.free_space > 1024 %}
+            {% set size_divisor = 1024 %}
+            {% set size_symbol = 'KB' %}
+        {% else %}
+            {% set size_divisor = '1' %}
+            {% set size_symbol = '' %}
+        {% endif %}
+    <p>{{ item.volume }}: {{ item.free_space // size_divisor }} {{ size_symbol }}</p>
+    {% endfor %}
 </body>
 
 </html>
