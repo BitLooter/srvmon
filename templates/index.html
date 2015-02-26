@@ -27,7 +27,7 @@
     <h1>Server status</h1>
     <h2>Free disk space</h2>
     {% for item in render_items %}
-        <p>{{ item.volume }}: {{ human_size(item.free_space) }}</p>
+        <p>{{ item.volume }}: {{ human_size(item.free_space) }} / {{ human_size(item.total_size) }}</p>
     {% endfor %}
 </body>
 
