@@ -27,6 +27,10 @@ class DisplayList(list):
     def _parse_display_list(self, display_list_path):
         list_file = open(display_list_path, 'r')
         for line in list_file:
+            # Ignore comments
+            if line.lstrip().startswith("#"):
+                continue
+
             self.append(VolumeInfo(line))
 
 @app.route("/")
