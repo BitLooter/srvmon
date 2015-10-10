@@ -1,5 +1,14 @@
 <!DOCTYPE html>
 
+{% macro render_item(item) %}
+    <div>
+        {{ item.text }}
+        {% for sub in item.subcommands %}
+            {{ render_item(sub) }}
+        {% endfor %}
+    </div>
+{% endmacro %}
+
 {% macro human_size(bytes) %}
     {% if bytes > 1024**3 %}
         {% set size_divisor = 1024**3 %}
@@ -21,14 +30,23 @@
 
 <head>
     <title>Server status page</title>
+    <style>
+        div .inlined {
+            color: red;
+        }
+    </style>
 </head>
 
 <body>
     <h1>Server status</h1>
     <h2>Free disk space</h2>
     {% for item in render_items %}
-        <p>{{ item.volume }}: {{ human_size(item.free_space) }} / {{ human_size(item.total_size) }}</p>
+        {{ render_item(item) }}
     {% endfor %}
+
+{#    {% for item in render_items %}
+        <p>{{ item.volume }}: {{ human_size(item.free_space) }} / {{ human_size(item.total_size) }}</p>
+    {% endfor %}#}
 </body>
 
 </html>
