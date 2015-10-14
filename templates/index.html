@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 {% macro render_item(item) %}
-    <div>
+    <div class='{{ item.classes|join(' ') }}'>
         {{ item.text }}
         {% for sub in item.subcommands %}
             {{ render_item(sub) }}
@@ -31,8 +31,8 @@
 <head>
     <title>Server status page</title>
     <style>
-        div .inlined {
-            color: red;
+        .inlinecontents * {
+            display: inline-block;
         }
     </style>
 </head>

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
 import os
+from collections import namedtuple
 from flask import Flask, render_template
 app = Flask(__name__)
 
 class BaseCommand:
     def __init__(self, subcommands=[]):
         self.subcommands = subcommands
-        self.text="DUMMYTEXT"
+        self.text=""
+        self.classes = []
 
 class TextCommand(BaseCommand):
     """Display list command that simply prints a string."""
@@ -18,7 +20,7 @@ class TextCommand(BaseCommand):
 class InlineCommand(BaseCommand):
     def __init__(self, subcommands):
         BaseCommand.__init__(self, subcommands=subcommands)
-        self.text="[INLINE]"
+        self.classes = ['inlinecontents']
 
 class VolumeInfo:
     def __init__(self, volume):
@@ -41,7 +43,7 @@ class DisplayList(list):
 
     def _get_display_list(self, display_list_path):
         commands = self._parse_display_list(display_list_path)
-        print(repr(commands))
+        #print(repr(commands))
         return self._process_list(commands)
 
     def _parse_display_list(self, display_list_path):
@@ -64,11 +66,15 @@ class DisplayList(list):
         remembered to update this information.
         """
 
+        ParsedCommand = namedtuple('ParsedCommand', ['command', 'arguments', 'subcommands'])
+        IndentStackItem = namedtuple('IndentStackItem', ['indent_level', 'block'])
+
         list_file = open(display_list_path, 'r')
-        root_block = []
-        current_block = root_block
-        last_indent=0
-        sb = None
+
+        #TODO: assumes first line has no indent, will break if not true
+        root_block = current_block = []
+        indent_stack = [ IndentStackItem(0, current_block) ]
+
         for line in list_file:
             # Ignore comments
             if line.lstrip().startswith("#"):
@@ -78,17 +84,25 @@ class DisplayList(list):
                 continue
 
             indent_level = len(line) - len(line.lstrip())
+            last_indent = indent_stack[-1].indent_level
             if indent_level > last_indent:
-                parent_block = current_block
-                current_block = last_subcommands
-                last_indent = indent_level
+                current_block = indent_stack[-1].block[-1].subcommands
+                indent_stack.append( IndentStackItem(indent_level, current_block) )
+            elif indent_level < last_indent:
+                while True:
+                    indent_stack.pop()
+                    if indent_level == indent_stack[-1].indent_level:
+                        current_block = indent_stack[-1].block
+                        break
+                #TODO: exception is raised here if a matching indent level is
+                # not found. This is a malformed config file, catch and show error
 
             command, *data = line.strip().split(None, 1)
             parameters = data[0] if len(data) > 0 else None
 
             # If the next line is indented, this becomes the next current_block
             last_subcommands = []
-            current_block.append( (command, parameters, last_subcommands) )
+            current_block.append( ParsedCommand(command, parameters, last_subcommands) )
 
 #            self.append(VolumeInfo(data))
         return root_block
@@ -99,8 +113,8 @@ class DisplayList(list):
             if command == 'text':
                 current_list.append(TextCommand(data))
             elif command == 'inline':
-                subcommands = self._process_list(subcommands)
-                current_list.append(InlineCommand(subcommands))
+                processed_commands = self._process_list(subcommands)
+                current_list.append(InlineCommand(processed_commands))
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 #TODO: Create a special 'error' metacommand for special display
