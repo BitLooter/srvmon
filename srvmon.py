@@ -36,6 +36,12 @@ class VolumeInfo:
     def total_size(self):
         return self._stat.f_blocks * self._stat.f_frsize
 
+#TODO: Test setup, properly handle display list functions
+def volume_free_space(volume):
+    return VolumeInfo(volume).free_space
+
+displaylist_functions = {'VolumeFreeSpace': volume_free_space}
+
 class DisplayList(list):
     def __init__(self, display_list_path):
         processed_list = self._get_display_list(display_list_path)
@@ -98,20 +104,41 @@ class DisplayList(list):
                 # not found. This is a malformed config file, catch and show error
 
             command, *data = line.strip().split(None, 1)
-            parameters = data[0] if len(data) > 0 else None
+            if data:
+                parameters = self._parse_command_arguments(data[0])
+            else:
+                parameters = None
 
-            # If the next line is indented, this becomes the next current_block
-            last_subcommands = []
-            current_block.append( ParsedCommand(command, parameters, last_subcommands) )
+            current_block.append( ParsedCommand(command, parameters, []) )
 
-#            self.append(VolumeInfo(data))
         return root_block
+
+    def _parse_command_arguments(self, argumentstring):
+        """Parsed the argments given to a command"""
+        ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs'])
+        arguments = []
+        #TODO: do this right
+        if '(' in argumentstring:
+            funcargs = argumentstring.split('(')[1].split(')')[0]
+            arguments.append(ParsedArgument('function', 'VolumeFreeSpace', [funcargs]))
+        else:
+            arguments.append(ParsedArgument('string', argumentstring, []))
+        return arguments
 
     def _process_list(self, parsed_config):
         current_list = []
-        for command, data, subcommands in parsed_config:
+        for command, arguments, subcommands in parsed_config:
+            # Preprocess function arguments
+            if arguments:
+                arg = arguments[0]
+                processed_args = []
+                if arg.type == 'function':
+                    processed_args.append(displaylist_functions[arg.value](arg.funcargs[0]))
+                else:
+                    processed_args.append(arg.value)
+            # Process command
             if command == 'text':
-                current_list.append(TextCommand(data))
+                current_list.append(TextCommand(processed_args[0]))
             elif command == 'inline':
                 processed_commands = self._process_list(subcommands)
                 current_list.append(InlineCommand(processed_commands))
