@@ -117,16 +117,21 @@ class DisplayList(list):
         """Parsed the argments given to a command"""
         ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs'])
         arguments = []
-        #TODO: do this right
-        if '(' in argumentstring:
-            funcargs = argumentstring.split('(')[1].split(')')[0]
-            arguments.append(ParsedArgument('function', 'VolumeFreeSpace', [funcargs]))
-        else:
-            arguments.append(ParsedArgument('string', argumentstring, []))
+
+        rawargs = argumentstring.split(',')
+        for arg in rawargs:
+            if '(' in argumentstring:
+                #TODO: handle multiple arguments to functions
+                funcargs = argumentstring.split('(')[1].split(')')[0]
+                arguments.append(ParsedArgument('function', 'VolumeFreeSpace', [funcargs]))
+            else:
+                arguments.append(ParsedArgument('string', arg, []))
+
         return arguments
 
     def _process_list(self, parsed_config):
         current_list = []
+        print(parsed_config)
         for command, arguments, subcommands in parsed_config:
             # Preprocess function arguments
             if arguments:
