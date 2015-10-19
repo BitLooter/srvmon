@@ -3,6 +3,9 @@
 import os
 from collections import namedtuple
 from flask import Flask, render_template
+
+import sysinfo
+
 app = Flask(__name__)
 
 class BaseCommand:
@@ -21,26 +24,6 @@ class InlineCommand(BaseCommand):
     def __init__(self, subcommands):
         BaseCommand.__init__(self, subcommands=subcommands)
         self.classes = ['inlinecontents']
-
-class VolumeInfo:
-    def __init__(self, volume):
-        #TODO: Verify volume is valid
-        self.volume = volume.strip()
-        self._stat = os.statvfs(self.volume)
-
-    @property
-    def free_space(self):
-        return self._stat.f_bavail * self._stat.f_frsize
-
-    @property
-    def total_size(self):
-        return self._stat.f_blocks * self._stat.f_frsize
-
-#TODO: Test setup, properly handle display list functions
-def volume_free_space(volume):
-    return VolumeInfo(volume).free_space
-
-displaylist_functions = {'VolumeFreeSpace': volume_free_space}
 
 class DisplayList(list):
     def __init__(self, display_list_path):
@@ -138,7 +121,7 @@ class DisplayList(list):
                 arg = arguments[0]
                 processed_args = []
                 if arg.type == 'function':
-                    processed_args.append(displaylist_functions[arg.value](arg.funcargs[0]))
+                    processed_args.append(sysinfo.displaylist_functions[arg.value](arg.funcargs[0]))
                 else:
                     processed_args.append(arg.value)
             # Process command
