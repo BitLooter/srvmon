@@ -98,32 +98,52 @@ class DisplayList(list):
 
     def _parse_command_arguments(self, argumentstring):
         """Parsed the argments given to a command"""
-        ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs'])
+        ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs', 'filter'])
         arguments = []
 
         rawargs = argumentstring.split(',')
-        for arg in rawargs:
-            if '(' in argumentstring:
+        for full_arg in rawargs:
+            arg, *arg_filter = full_arg.split('|')
+            arg_filter = arg_filter if not [] else None
+            if '(' in arg:
                 #TODO: handle multiple arguments to functions
                 funcargs = argumentstring.split('(')[1].split(')')[0]
-                arguments.append(ParsedArgument('function', 'VolumeFreeSpace', [funcargs]))
+                arguments.append(ParsedArgument('function', 'VolumeFreeSpace', [funcargs], arg_filter))
             else:
-                arguments.append(ParsedArgument('string', arg, []))
+                arguments.append(ParsedArgument('string', arg, [], arg_filter))
 
         return arguments
 
     def _process_list(self, parsed_config):
         current_list = []
-        print(parsed_config)
         for command, arguments, subcommands in parsed_config:
             # Preprocess function arguments
             if arguments:
                 arg = arguments[0]
                 processed_args = []
                 if arg.type == 'function':
-                    processed_args.append(sysinfo.displaylist_functions[arg.value](arg.funcargs[0]))
+                    value = sysinfo.displaylist_functions[arg.value](arg.funcargs[0])
                 else:
-                    processed_args.append(arg.value)
+                    value = arg.value
+
+                if arg.filter:
+                    #TODO: placeholder, implement actual filters
+                    int_value = int(value)
+                    if int_value > 1024**3:
+                        size_divisor = 1024**3
+                        size_symbol = "GB"
+                    elif int_value > 1024**2:
+                        size_divisor = 1024**2
+                        size_symbol = "MB"
+                    elif int_value > 1024:
+                        size_divisor = 1024
+                        size_symbol = "KB"
+                    else:
+                        size_divisor = '1'
+                        size_symbol = ''
+                    value = str(int_value // size_divisor) + size_symbol
+
+                processed_args.append(value)
             # Process command
             if command == 'text':
                 current_list.append(TextCommand(processed_args[0]))

@@ -9,23 +9,6 @@
     </div>
 {% endmacro %}
 
-{% macro human_size(bytes) %}
-    {% if bytes > 1024**3 %}
-        {% set size_divisor = 1024**3 %}
-        {% set size_symbol = 'GB' %}
-    {% elif bytes > 1024**2 %}
-        {% set size_divisor = 1024**2 %}
-        {% set size_symbol = 'MB' %}
-    {% elif bytes > 1024 %}
-        {% set size_divisor = 1024 %}
-        {% set size_symbol = 'KB' %}
-    {% else %}
-        {% set size_divisor = '1' %}
-        {% set size_symbol = '' %}
-    {% endif %}
-    {{ bytes // size_divisor }}{{ size_symbol }}
-{% endmacro %}
-
 <html>
 
 <head>
@@ -43,10 +26,6 @@
     {% for item in render_items %}
         {{ render_item(item) }}
     {% endfor %}
-
-{#    {% for item in render_items %}
-        <p>{{ item.volume }}: {{ human_size(item.free_space) }} / {{ human_size(item.total_size) }}</p>
-    {% endfor %}#}
 </body>
 
 </html>
