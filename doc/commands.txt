@@ -1,0 +1,20 @@
+text
+    Text to be displayed on the page.
+
+header
+    Like text, but renders as a large, bold header.
+
+divider
+    Inserts a seperator on the page. (Renders an <hr> element).
+
+inline
+    All subcommands to this are rendered on one line (sets display to inline-
+    block for all child elements).
+
+widget
+    A collection of commands to be called elsewhere. Whenever a widget is
+    called as a command, the display list behaves as though its subcommands
+    were inserted at the location of the call.
+    
+    Widgets may have any alphanumeric name (that are not reserved), but are
+    capitalized by convention.
