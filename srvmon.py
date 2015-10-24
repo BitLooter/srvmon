@@ -5,6 +5,7 @@ from collections import namedtuple
 from flask import Flask, render_template
 
 import sysinfo
+import datafilters
 
 app = Flask(__name__)
 
@@ -104,7 +105,8 @@ class DisplayList(list):
         rawargs = argumentstring.split(',')
         for full_arg in rawargs:
             arg, *arg_filter = full_arg.split('|')
-            arg_filter = arg_filter if not [] else None
+            print("=="*30)
+            arg_filter = arg_filter[0] if arg_filter != [] else None
             if '(' in arg:
                 #TODO: handle multiple arguments to functions
                 funcargs = argumentstring.split('(')[1].split(')')[0]
@@ -127,21 +129,8 @@ class DisplayList(list):
                     value = arg.value
 
                 if arg.filter:
-                    #TODO: placeholder, implement actual filters
-                    int_value = int(value)
-                    if int_value > 1024**3:
-                        size_divisor = 1024**3
-                        size_symbol = "GB"
-                    elif int_value > 1024**2:
-                        size_divisor = 1024**2
-                        size_symbol = "MB"
-                    elif int_value > 1024:
-                        size_divisor = 1024
-                        size_symbol = "KB"
-                    else:
-                        size_divisor = '1'
-                        size_symbol = ''
-                    value = str(int_value // size_divisor) + size_symbol
+                    print(arg.filter)
+                    value = datafilters.output_filters[arg.filter](value)
 
                 processed_args.append(value)
             # Process command
