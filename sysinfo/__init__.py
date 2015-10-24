@@ -4,4 +4,7 @@
 
 from sysinfo.linuxinfo import *
 
-displaylist_functions = {'VolumeFreeSpace': lambda x: VolumeInfo(x).free_space}
+displaylist_functions = {
+    'VolumeFreeSpace': lambda x: VolumeInfo(x).free_space,
+    'VolumeTotalSpace': lambda x: VolumeInfo(x).total_size,
+}
