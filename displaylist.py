@@ -1,5 +1,6 @@
 """Code for working with display lists"""
 
+import re
 from collections import namedtuple
 
 import sysinfo
@@ -87,9 +88,17 @@ class DisplayList(list):
         ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs', 'filter'])
         arguments = []
 
-        rawargs = argumentstring.split(',')
+        # Pattern matching commas not inside of quotes or parentheses.
+        # Explanation:
+        #  (?=(?:(?:[^"]*"){2})*[^"]*$) - Lookahead matching an even number of quotes
+        #  (?![^()]*\)) - Negative lookahead matching non-parens ending with a ')'
+        # This will break with nested parentheses; for now, they are not
+        # supported. If it is needed in the future, regexes will not work here.
+        commapattern = ',(?=(?:(?:[^"]*"){2})*[^"]*$)(?![^()]*\))'
+        rawargs = re.split(commapattern, argumentstring)
         for full_arg in rawargs:
-            arg, *arg_filter = full_arg.split('|')
+            #TODO: Use a regex to split '|' like above
+            arg, *arg_filter = full_arg.strip().split('|')
             arg_filter = arg_filter[0] if arg_filter != [] else None
             # If argument is a function
             if '(' in arg:
@@ -98,7 +107,9 @@ class DisplayList(list):
                 funcargs = argumentstring.split('(')[1].split(')')[0]
                 arguments.append(ParsedArgument('function', funcname, [funcargs], arg_filter))
             else:
-                arguments.append(ParsedArgument('string', arg, [], arg_filter))
+                #TODO: This will not work right once escaped characters are added
+                clean_arg = arg.strip().strip('"')
+                arguments.append(ParsedArgument('string', clean_arg, [], arg_filter))
 
         return arguments
 
