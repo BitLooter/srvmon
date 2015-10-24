@@ -91,10 +91,12 @@ class DisplayList(list):
         for full_arg in rawargs:
             arg, *arg_filter = full_arg.split('|')
             arg_filter = arg_filter[0] if arg_filter != [] else None
+            # If argument is a function
             if '(' in arg:
                 #TODO: handle multiple arguments to functions
+                funcname = argumentstring.split('(')[0].strip()
                 funcargs = argumentstring.split('(')[1].split(')')[0]
-                arguments.append(ParsedArgument('function', 'VolumeFreeSpace', [funcargs], arg_filter))
+                arguments.append(ParsedArgument('function', funcname, [funcargs], arg_filter))
             else:
                 arguments.append(ParsedArgument('string', arg, [], arg_filter))
 
