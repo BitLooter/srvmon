@@ -9,22 +9,12 @@ import datafilters
 
 app = Flask(__name__)
 
-class BaseCommand:
-    def __init__(self, subcommands=[]):
+class DisplayListCommand:
+    def __init__(self, command_name, contents="", css_classes=[], subcommands=[]):
+        self.name = command_name
         self.subcommands = subcommands
-        self.text=""
-        self.classes = []
-
-class TextCommand(BaseCommand):
-    """Display list command that simply prints a string."""
-    def __init__(self, text):
-        BaseCommand.__init__(self)
-        self.text = text
-
-class InlineCommand(BaseCommand):
-    def __init__(self, subcommands):
-        BaseCommand.__init__(self, subcommands=subcommands)
-        self.classes = ['inlinecontents']
+        self.contents = contents
+        self.css_classes = css_classes
 
 class DisplayList(list):
     def __init__(self, display_list_path):
@@ -33,7 +23,6 @@ class DisplayList(list):
 
     def _get_display_list(self, display_list_path):
         commands = self._parse_display_list(display_list_path)
-        #print(repr(commands))
         return self._process_list(commands)
 
     def _parse_display_list(self, display_list_path):
@@ -105,7 +94,6 @@ class DisplayList(list):
         rawargs = argumentstring.split(',')
         for full_arg in rawargs:
             arg, *arg_filter = full_arg.split('|')
-            print("=="*30)
             arg_filter = arg_filter[0] if arg_filter != [] else None
             if '(' in arg:
                 #TODO: handle multiple arguments to functions
@@ -129,20 +117,29 @@ class DisplayList(list):
                     value = arg.value
 
                 if arg.filter:
-                    print(arg.filter)
                     value = datafilters.output_filters[arg.filter](value)
 
                 processed_args.append(value)
             # Process command
+            command_name = command
+            contents = ""
+            classes = []
+            processed_subcommands = []
             if command == 'text':
-                current_list.append(TextCommand(processed_args[0]))
+                contents = processed_args[0]
             elif command == 'inline':
-                processed_commands = self._process_list(subcommands)
-                current_list.append(InlineCommand(processed_commands))
+                processed_subcommands = self._process_list(subcommands)
+                classes = ['inlinecontents']
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
-                #TODO: Create a special 'error' metacommand for special display
-                current_list.append(TextCommand("ERROR: unknown command {}".format(command)))
+                #TODO: Add formatting to errors in output
+                command_name = 'error'
+                contents = "ERROR: unknown command {}".format(command)
+            processed_command = DisplayListCommand(command_name,
+                                                   contents=contents,
+                                                   css_classes=classes,
+                                                   subcommands=processed_subcommands)
+            current_list.append(processed_command)
         return current_list
 
 @app.route("/")

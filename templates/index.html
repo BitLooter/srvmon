@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 {% macro render_item(item) %}
-    <div class='{{ item.classes|join(' ') }}'>
-        {{ item.text }}
+    <div class='{{ item.css_classes|join(' ') }}'>
+        {{ item.contents }}
         {% for sub in item.subcommands %}
             {{ render_item(sub) }}
         {% endfor %}
