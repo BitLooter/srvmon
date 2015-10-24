@@ -77,7 +77,7 @@ class DisplayList(list):
             if data:
                 parameters = self._parse_command_arguments(data[0])
             else:
-                parameters = None
+                parameters = []
 
             current_block.append( ParsedCommand(command, parameters, []) )
 
@@ -99,27 +99,25 @@ class DisplayList(list):
         for full_arg in rawargs:
             #TODO: Use a regex to split '|' like above
             arg, *arg_filter = full_arg.strip().split('|')
-            arg_filter = arg_filter[0] if arg_filter != [] else None
+            arg_filter = arg_filter[0].strip() if arg_filter != [] else None
             # If argument is a function
             if '(' in arg:
                 #TODO: handle multiple arguments to functions
-                funcname = argumentstring.split('(')[0].strip()
-                funcargs = argumentstring.split('(')[1].split(')')[0]
+                funcname = arg.split('(')[0].strip()
+                funcargs = arg.split('(')[1].split(')')[0].strip()
                 arguments.append(ParsedArgument('function', funcname, [funcargs], arg_filter))
             else:
                 #TODO: This will not work right once escaped characters are added
                 clean_arg = arg.strip().strip('"')
                 arguments.append(ParsedArgument('string', clean_arg, [], arg_filter))
-
         return arguments
 
     def _process_list(self, parsed_config):
         current_list = []
         for command, arguments, subcommands in parsed_config:
-            # Preprocess function arguments
-            if arguments:
-                arg = arguments[0]
-                processed_args = []
+            # Preprocess function arguments - reduce all arguments to strings
+            processed_args = []
+            for arg in arguments:
                 if arg.type == 'function':
                     value = sysinfo.displaylist_functions[arg.value](arg.funcargs[0])
                 else:
@@ -135,7 +133,8 @@ class DisplayList(list):
             classes = []
             processed_subcommands = []
             if command == 'text':
-                contents = processed_args[0]
+                #TODO: might need to tweak this when keyword args are added
+                contents = " ".join(processed_args)
             elif command == 'inline':
                 processed_subcommands = self._process_list(subcommands)
                 classes = ['inlinecontents']
