@@ -80,20 +80,19 @@ class DisplayList(list):
             line = line.strip()
             # If a variable assignment
             if line.startswith('$'):
-                # setvariable is a virtual command used by the parser
-                command = 'setvariable'
+                # Lines starting with '$' are a shortcut for setvariable
+                # We will simply reformat the line for regular processing
                 #TODO: check that the line is properly formatted
                 #TODO: currently treats value as raw text, handle functions
                 varname, varvalue = line.split('=', 1)
                 varname = varname.strip().lstrip('$')
-                varvalue = varvalue.strip().strip('"')
-                parameters = [ParsedArgument(command, None, [varname, varvalue], None)]
+                line = "{} {}, {}".format('setvariable', varname, varvalue)
+
+            command, *data = line.split(None, 1)
+            if data:
+                parameters = self._parse_command_arguments(data[0])
             else:
-                command, *data = line.split(None, 1)
-                if data:
-                    parameters = self._parse_command_arguments(data[0])
-                else:
-                    parameters = []
+                parameters = []
 
             current_block.append( ParsedCommand(command, parameters, []) )
 
@@ -134,18 +133,19 @@ class DisplayList(list):
         for command, arguments, subcommands in parsed_config:
             # Preprocess command arguments - reduce all arguments to strings
             processed_args = []
+            #TODO: Perform string substitution before calling functions
             for arg in arguments:
                 if arg.type == 'function':
                     call_func = sysinfo.displaylist_functions[arg.value]
                     call_args = [x.value for x in arg.funcargs]
                     value = call_func(*call_args)
                 elif arg.type == 'string':
+                    # Replace variables with their value
+                    #TODO: implement string substitution
                     if arg.value.startswith('$'):
                         value = self.variables[arg.value[1:]]
                     else:
                         value = arg.value
-                elif arg.type == 'setvariable':
-                    self.variables[arg.funcargs[0]] = arg.funcargs[1]
                 else:
                     #TODO: unkown argument type, raise an error
                     pass
@@ -160,9 +160,6 @@ class DisplayList(list):
             contents = ""
             classes = []
             processed_subcommands = []
-#            if command == 'setvariable':
-#                varname, varvalue = processed_args
-#                self.variables[varname] = varvalue
             if command == 'text':
                 #TODO: might need to tweak this when keyword args are added
                 contents = " ".join(processed_args)
@@ -170,8 +167,8 @@ class DisplayList(list):
                 processed_subcommands = self._process_list(subcommands)
                 classes = ['inlinecontents']
             elif command == 'setvariable':
-                # Ignore, used in preprocess step
-                pass
+                varname, varvalue = processed_args
+                self.variables[varname] = varvalue
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 command_name = 'error'
