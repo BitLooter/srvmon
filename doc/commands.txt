@@ -1,5 +1,6 @@
 text
-    Text to be displayed on the page.
+    Text to be displayed on the page. Allows arbitrary number of commands,
+    which will be joined into a single string seperated by spaces.
 
 header
     Like text, but renders as a large, bold header.
