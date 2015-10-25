@@ -6,6 +6,11 @@ from collections import namedtuple
 import sysinfo
 import datafilters
 
+IndentStackItem = namedtuple('IndentStackItem', ['indent_level', 'block'])
+ParsedCommand = namedtuple('ParsedCommand', ['command', 'arguments', 'subcommands'])
+ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs', 'filter'])
+
+
 class DisplayListCommand:
     def __init__(self, command_name, contents="", css_classes=[], subcommands=[]):
         self.name = command_name
@@ -15,6 +20,8 @@ class DisplayListCommand:
 
 class DisplayList(list):
     def __init__(self, display_list_path):
+        self.variables = {}
+
         processed_list = self._get_display_list(display_list_path)
         list.__init__(self, processed_list)
 
@@ -42,9 +49,6 @@ class DisplayList(list):
         remembered to update this information.
         """
 
-        ParsedCommand = namedtuple('ParsedCommand', ['command', 'arguments', 'subcommands'])
-        IndentStackItem = namedtuple('IndentStackItem', ['indent_level', 'block'])
-
         list_file = open(display_list_path, 'r')
 
         #TODO: assumes first line has no indent, will break if not true
@@ -53,7 +57,7 @@ class DisplayList(list):
 
         for line in list_file:
             # Ignore comments
-            if line.lstrip().startswith("#"):
+            if line.lstrip().startswith('#'):
                 continue
             # Ignore blank lines
             if not line.strip():
@@ -73,11 +77,23 @@ class DisplayList(list):
                 #TODO: exception is raised here if a matching indent level is
                 # not found. This is a malformed config file, catch and show error
 
-            command, *data = line.strip().split(None, 1)
-            if data:
-                parameters = self._parse_command_arguments(data[0])
+            line = line.strip()
+            # If a variable assignment
+            if line.startswith('$'):
+                # setvariable is a virtual command used by the parser
+                command = 'setvariable'
+                #TODO: check that the line is properly formatted
+                #TODO: currently treats value as raw text, handle functions
+                varname, varvalue = line.split('=', 1)
+                varname = varname.strip().lstrip('$')
+                varvalue = varvalue.strip().strip('"')
+                parameters = [ParsedArgument(command, None, [varname, varvalue], None)]
             else:
-                parameters = []
+                command, *data = line.split(None, 1)
+                if data:
+                    parameters = self._parse_command_arguments(data[0])
+                else:
+                    parameters = []
 
             current_block.append( ParsedCommand(command, parameters, []) )
 
@@ -85,7 +101,6 @@ class DisplayList(list):
 
     def _parse_command_arguments(self, argumentstring):
         """Parsed the argments given to a command"""
-        ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs', 'filter'])
         arguments = []
 
         # Pattern matching commas not inside of quotes or parentheses.
@@ -124,8 +139,16 @@ class DisplayList(list):
                     call_func = sysinfo.displaylist_functions[arg.value]
                     call_args = [x.value for x in arg.funcargs]
                     value = call_func(*call_args)
+                elif arg.type == 'string':
+                    if arg.value.startswith('$'):
+                        value = self.variables[arg.value[1:]]
+                    else:
+                        value = arg.value
+                elif arg.type == 'setvariable':
+                    self.variables[arg.funcargs[0]] = arg.funcargs[1]
                 else:
-                    value = arg.value
+                    #TODO: unkown argument type, raise an error
+                    pass
 
                 if arg.filter:
                     value = datafilters.output_filters[arg.filter](value)
@@ -137,12 +160,18 @@ class DisplayList(list):
             contents = ""
             classes = []
             processed_subcommands = []
+#            if command == 'setvariable':
+#                varname, varvalue = processed_args
+#                self.variables[varname] = varvalue
             if command == 'text':
                 #TODO: might need to tweak this when keyword args are added
                 contents = " ".join(processed_args)
             elif command == 'inline':
                 processed_subcommands = self._process_list(subcommands)
                 classes = ['inlinecontents']
+            elif command == 'setvariable':
+                # Ignore, used in preprocess step
+                pass
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 #TODO: Add formatting to errors in output
