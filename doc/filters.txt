@@ -1,0 +1,5 @@
+human_bytes
+    Converts a number of bytes into a more compact, human-readable form (e.g.
+    2048 becomes 2KB).
+uppercase
+    Converts case to uppercase.
