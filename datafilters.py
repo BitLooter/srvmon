@@ -8,6 +8,10 @@ def outputfilter(func):
     return func
 
 @outputfilter
+def uppercase(text):
+    return text.upper()
+
+@outputfilter
 def human_bytes(value):
     int_value = int(value)
     if int_value > 1024**3:
