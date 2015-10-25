@@ -1,0 +1,39 @@
+# Test argument parsing
+text NoQuotes
+text "With quotes"
+text NoQuotes, Arguments
+text "With quotes", "and arguments"
+text "Quotes, are", "inside, the strings"
+text "Mixed", quotes, "before and after"
+text    "  Weird  "    ,   spaces  ,   " also at end of line   "    
+text "filter test"|uppercase
+text "Filtering with weird spacing:", "test  "   |  uppercase   
+#text "This will break |filters", "This should not break"|uppercase
+text _TestEcho("Function test")
+text "Mixed strings", _TestEcho("and"), "functions"
+text _TestEcho("Filter function output")|uppercase
+
+# Test variables
+$TESTVAR = TestString
+text $TESTVAR
+text "Mixed text and variable:", $TESTVAR
+$TESTQUOTES = "Test variable quoted"
+text "Should have no quotes:", $TESTQUOTES
+text "Test string substitution:", "TESTVAR = $TESTVAR"
+$TESTFUNCTION = "Function parameter test"
+text _TestEcho($TESTFUNCTION)
+
+
+# Test commands
+inline
+    text "Both strings"
+    text "on the same line"
+
+# Test error handling
+# A fake command
+text "An error should follow this line:"
+notacommand notdata
+
+# Test widgets
+widget vspace
+    text "test"
