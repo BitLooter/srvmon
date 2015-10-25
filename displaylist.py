@@ -174,9 +174,9 @@ class DisplayList(list):
                 pass
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
-                #TODO: Add formatting to errors in output
                 command_name = 'error'
                 contents = "ERROR: unknown command {}".format(command)
+                classes = ['errormessage']
             processed_command = DisplayListCommand(command_name,
                                                    contents=contents,
                                                    css_classes=classes,

@@ -1,3 +1,7 @@
 .inlinecontents * {
     display: inline-block;
 }
+
+.errormessage {
+    color: red;
+}
