@@ -103,9 +103,11 @@ class DisplayList(list):
             # If argument is a function
             if '(' in arg:
                 #TODO: handle multiple arguments to functions
+                # This will not properly handle nested function calls
                 funcname = arg.split('(')[0].strip()
                 funcargs = arg.split('(')[1].split(')')[0].strip()
-                arguments.append(ParsedArgument('function', funcname, [funcargs], arg_filter))
+                parsed_funcargs = self._parse_command_arguments(funcargs)
+                arguments.append(ParsedArgument('function', funcname, parsed_funcargs, arg_filter))
             else:
                 #TODO: This will not work right once escaped characters are added
                 clean_arg = arg.strip().strip('"')
@@ -115,11 +117,13 @@ class DisplayList(list):
     def _process_list(self, parsed_config):
         current_list = []
         for command, arguments, subcommands in parsed_config:
-            # Preprocess function arguments - reduce all arguments to strings
+            # Preprocess command arguments - reduce all arguments to strings
             processed_args = []
             for arg in arguments:
                 if arg.type == 'function':
-                    value = sysinfo.displaylist_functions[arg.value](arg.funcargs[0])
+                    call_func = sysinfo.displaylist_functions[arg.value]
+                    call_args = [x.value for x in arg.funcargs]
+                    value = call_func(*call_args)
                 else:
                     value = arg.value
 
@@ -127,6 +131,7 @@ class DisplayList(list):
                     value = datafilters.output_filters[arg.filter](value)
 
                 processed_args.append(value)
+            processed_args = [str(a) for a in processed_args]
             # Process command
             command_name = command
             contents = ""
