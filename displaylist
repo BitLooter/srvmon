@@ -14,26 +14,35 @@ text "Mixed strings", _TestEcho("and"), "functions"
 text _TestEcho("Filter function output")|uppercase
 
 # Test variables
+text "VARIABLE TESTS"
+text =========================================
 $TESTVAR = TestString
 text $TESTVAR
 text "Mixed text and variable:", $TESTVAR
 $TESTQUOTES = "Test variable quoted"
 text "Should have no quotes:", $TESTQUOTES
-text "Test string substitution:", "TESTVAR = $TESTVAR"
+text "Test string substitution:", "TESTVAR is equal to $TESTVAR"
 $TESTFUNCTION = "Function parameter test"
 text _TestEcho($TESTFUNCTION)
 
 
 # Test commands
+text "COMMANDS TESTS"
+text =========================================
+
 inline
     text "Both strings"
     text "on the same line"
 
 # Test error handling
+text "ERROR HANDLING TESTS"
+text =========================================
 # A fake command
 text "An error should follow this line:"
 notacommand notdata
 
 # Test widgets
+text "WIDGETS TESTS"
+text =========================================
 widget vspace
     text "test"
