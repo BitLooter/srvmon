@@ -18,6 +18,11 @@ class DisplayListCommand:
         self.contents = contents
         self.css_classes = css_classes
 
+    def __str__(self):
+        return "{}: {}{}".format(self.name,
+                                 self.contents if self.contents else "<No contents>",
+                                 " [Subcommands]" if self.subcommands else "")
+
 class DisplayList(list):
     def __init__(self, display_list_path):
         self.variables = {}
@@ -163,6 +168,8 @@ class DisplayList(list):
             elif command == 'setvariable':
                 varname, varvalue = processed_args
                 self.variables['$'+varname] = varvalue
+                # This is not a rendered command, skip to the next
+                continue
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 command_name = 'error'
