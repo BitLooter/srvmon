@@ -40,9 +40,14 @@ text =========================================
 # A fake command
 text "An error should follow this line:"
 notacommand notdata
+# Bad variable
+#text "This variable doesn't exist:", $NOTAVARIABLE
 
 # Test widgets
 text "WIDGETS TESTS"
 text =========================================
-widget vspace
-    text "test"
+widget TestWidget
+    text "First widget line"
+    text "Second widget line"
+
+TestWidget
