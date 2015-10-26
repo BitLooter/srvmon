@@ -133,19 +133,13 @@ class DisplayList(list):
         for command, arguments, subcommands in parsed_config:
             # Preprocess command arguments - reduce all arguments to strings
             processed_args = []
-            #TODO: Perform string substitution before calling functions
             for arg in arguments:
                 if arg.type == 'function':
                     call_func = sysinfo.displaylist_functions[arg.value]
-                    call_args = [x.value for x in arg.funcargs]
+                    call_args = [self._substitute_strings(x.value) for x in arg.funcargs]
                     value = call_func(*call_args)
                 elif arg.type == 'string':
-                    # Replace variables with their value
-                    #TODO: implement string substitution
-                    if arg.value.startswith('$'):
-                        value = self.variables[arg.value[1:]]
-                    else:
-                        value = arg.value
+                    value = self._substitute_strings(arg.value)
                 else:
                     #TODO: unkown argument type, raise an error
                     pass
@@ -168,7 +162,7 @@ class DisplayList(list):
                 classes = ['inlinecontents']
             elif command == 'setvariable':
                 varname, varvalue = processed_args
-                self.variables[varname] = varvalue
+                self.variables['$'+varname] = varvalue
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 command_name = 'error'
@@ -180,3 +174,15 @@ class DisplayList(list):
                                                    subcommands=processed_subcommands)
             current_list.append(processed_command)
         return current_list
+
+    def _substitute_strings(self, string):
+        """Performs string substitution"""
+        while '$' in string:
+            varname = re.search('\$\w*', string).group()
+            if varname in self.variables:
+                varvalue = self.variables[varname]
+            else:
+                #TODO: raise an error if the variable doesn't exist
+                pass
+            string = string.replace(varname, varvalue)
+        return string
