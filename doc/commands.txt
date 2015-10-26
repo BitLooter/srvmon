@@ -22,3 +22,12 @@ widget
 
 foreach
     Repeats subcommands for every item in a list.
+
+newline
+    Inserts a blank line here.
+
+center
+    Center rendered subcommands.
+
+rightjustify
+    Right-justifies rendered subcommands
