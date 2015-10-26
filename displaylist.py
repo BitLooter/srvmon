@@ -26,6 +26,8 @@ class DisplayListCommand:
 class DisplayList(list):
     def __init__(self, display_list_path):
         self.variables = {}
+        # Stores the parsed widgets, are processed when used
+        self.widgets = {}
 
         processed_list = self._get_display_list(display_list_path)
         list.__init__(self, processed_list)
@@ -134,6 +136,11 @@ class DisplayList(list):
         return arguments
 
     def _process_list(self, parsed_config):
+        """
+        Takes a parsed display list and turns it into a list of DisplayListCommand
+
+        This function calls itself to handle subcommand lists.
+        """
         current_list = []
         for command, arguments, subcommands in parsed_config:
             # Preprocess command arguments - reduce all arguments to strings
@@ -170,6 +177,13 @@ class DisplayList(list):
                 self.variables['$'+varname] = varvalue
                 # This is not a rendered command, skip to the next
                 continue
+            elif command == 'widget':
+                self.widgets[processed_args[0]] = subcommands
+                # This is not a rendered command, skip to the next
+                continue
+            elif command in self.widgets:
+                command_name = 'renderedwidget'
+                processed_subcommands = self._process_list(self.widgets[command])
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 command_name = 'error'
