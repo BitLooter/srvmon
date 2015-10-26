@@ -187,7 +187,7 @@ class DisplayList(list):
             else:
                 #TODO: Only do this if a debug variable is set, otherwise raise an error
                 command_name = 'error'
-                contents = "ERROR: unknown command {}".format(command)
+                contents = "ERROR: Not a valid command or widget: {}".format(command)
                 classes = ['errormessage']
             processed_command = DisplayListCommand(command_name,
                                                    contents=contents,
