@@ -31,3 +31,6 @@ center
 
 rightjustify
     Right-justifies rendered subcommands
+
+include
+    Inserts another display list at this point. Useful for libraries of widgets.
