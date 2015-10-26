@@ -10,6 +10,11 @@ IndentStackItem = namedtuple('IndentStackItem', ['indent_level', 'block'])
 ParsedCommand = namedtuple('ParsedCommand', ['command', 'arguments', 'subcommands'])
 ParsedArgument = namedtuple('ParsedArgument', ['type', 'value', 'funcargs', 'filter'])
 
+class DisplayListError(Exception):
+    def __init__(self, message, filename, line_number):
+        self.message = message
+        self.filename = filename
+        self.line_number = line_number
 
 class DisplayListCommand:
     def __init__(self, command_name, contents="", css_classes=[], subcommands=[]):
@@ -26,7 +31,7 @@ class DisplayListCommand:
 class DisplayList(list):
     def __init__(self, display_list_path):
         self.variables = {}
-        # Stores the parsed widgets, are processed when used
+        # Stores parsed widgets, are processed when used
         self.widgets = {}
 
         processed_list = self._get_display_list(display_list_path)
@@ -62,7 +67,14 @@ class DisplayList(list):
         root_block = current_block = []
         indent_stack = [ IndentStackItem(0, current_block) ]
 
-        for line in list_file:
+        firstline = list_file.readline()
+        # Check that the first line is not indented
+        if len(firstline) - len(firstline.lstrip()) != 0:
+            errormsg = "Unexpected indent on first line"
+            raise DisplayListError(errormsg, display_list_path, 1)
+        list_file.seek(0)
+
+        for line_number, line in enumerate(list_file, start=1):
             # Ignore comments
             if line.lstrip().startswith('#'):
                 continue
@@ -78,11 +90,14 @@ class DisplayList(list):
             elif indent_level < last_indent:
                 while True:
                     indent_stack.pop()
-                    if indent_level == indent_stack[-1].indent_level:
-                        current_block = indent_stack[-1].block
-                        break
-                #TODO: exception is raised here if a matching indent level is
-                # not found. This is a malformed config file, catch and show error
+                    if indent_stack:
+                        if indent_level == indent_stack[-1].indent_level:
+                            current_block = indent_stack[-1].block
+                            break
+                    else:
+                        # Malformed display list file, bad indentation
+                        errormsg = "Unexpected indentation"
+                        raise DisplayListError(errormsg, display_list_path, line_number)
 
             line = line.strip()
             # If a variable assignment
@@ -203,7 +218,8 @@ class DisplayList(list):
             if varname in self.variables:
                 varvalue = self.variables[varname]
             else:
-                #TODO: raise an error if the variable doesn't exist
-                pass
+                errormsg = "Undefined variable " + varname
+                #TODO: use real info here
+                raise DisplayListError(errormsg, "unknown", None)
             string = string.replace(varname, varvalue)
         return string
